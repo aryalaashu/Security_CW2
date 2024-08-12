@@ -48,4 +48,17 @@ const verifyAuthorization = (req, res, next) => {
   }
 };
 
-module.exports = { verifyUser, verifyAuthorization };
+
+const rateLimit = require('express-rate-limit');
+
+// Define rate limiter middleware
+const loginRateLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, 
+    max: 5, 
+    message: {
+        success: false,
+        msg: 'Too many login attempts from this IP, please try again after 15 minutes'
+    },
+    headers: true, 
+});
+module.exports = { verifyUser, verifyAuthorization,loginRateLimiter };

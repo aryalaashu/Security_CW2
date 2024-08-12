@@ -45,41 +45,73 @@ class UserController {
         try {
             const { error } = this.loginValidationSchema.validate(req.body);
             if (error) {
-                console.log("error", error);
                 return res.status(httpStatus.BAD_REQUEST).json({
                     success: false,
                     msg: error.message
                 });
             }
-
+    
             const user = await userModel.findOne({
                 email: req.body.email,
                 is_deleted: false
             }).lean();
+    
             if (!user) {
                 return res.status(httpStatus.NOT_FOUND).json({
                     success: false,
                     msg: "User Not Registered!!"
                 });
             }
-
-            // check if password is valid
+    
+            // Check if account is locked
+            if (user.accountLockedUntil && new Date() < user.accountLockedUntil) {
+                return res.status(httpStatus.FORBIDDEN).json({
+                    success: false,
+                    msg: `Account is locked. Try again after ${user.accountLockedUntil.toLocaleTimeString()}`
+                });
+            }
+    
+            // Check if password is valid
             const checkPassword = await bcrypt.compare(req.body.password, user.password);
             if (!checkPassword) {
+                await userModel.updateOne(
+                    { _id: user._id },
+                    { $inc: { loginAttempt: 1 } }
+                );
+    
+                // Lock the account if login attempts exceed 3
+                if (user.loginAttempt + 1 >= 3) {
+                    const lockTime = new Date();
+                    lockTime.setMinutes(lockTime.getMinutes() + 5);
+    
+                    await userModel.updateOne(
+                        { _id: user._id },
+                        { $set: { accountLockedUntil: lockTime, loginAttempt: 0 } }
+                    );
+    
+                    return res.status(httpStatus.FORBIDDEN).json({
+                        success: false,
+                        msg: "Account locked due to too many failed login attempts. Try again after 5 minutes."
+                    });
+                }
+    
                 return res.status(httpStatus.NOT_FOUND).json({
                     success: false,
                     msg: "Email or Password Incorrect!!"
                 });
             }
-
-            // generate and send a JWT token for the authenticated user
+    
+            // Reset login attempts on successful login
+            await userModel.updateOne(
+                { _id: user._id },
+                { $set: { loginAttempt: 0, accountLockedUntil: null } }
+            );
+    
+            // Generate and send a JWT token for the authenticated user
             const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-
+    
             const { password, __v, ...data } = user;
-
-            //create cart for the user
-            // await this.createCart(user);
-
+    
             return res.status(httpStatus.OK).json({
                 success: true,
                 msg: "Login Success!!",
@@ -96,7 +128,7 @@ class UserController {
             });
         }
     };
-
+    
     register = async (req, res, next) => {
         try {
             const { error } = this.userValidationSchema.validate(req.body);

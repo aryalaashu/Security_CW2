@@ -84,7 +84,7 @@ const sslOptions = {
 https.createServer(sslOptions, app).listen(port, () => {
   console.log(`Server is starting at port ${port} || SUCCESS`);
   console.log(`Hosting at https://${url}:${port} || SUCCESS`);
-  console.log(`${app_name} is running on env ${env} || SUCCESS`);
+  // console.log(`${app_name} is running on env ${env} || SUCCESS`);
   console.log(
     '--------------------------------------------------------------------------------------------------------------------------------------------------'
   );

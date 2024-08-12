@@ -16,7 +16,9 @@ const userSchema = new Schema(
                 "superadmin"
             ]
         },
-        image: {type: String},
+        loginAttempt: { type: Number, default: 0 },
+        accountLockedUntil: { type: Date, default: null },
+        image: { type: String },
         is_deleted: { type: Boolean, default: false },
     },
     { timestamps: true }

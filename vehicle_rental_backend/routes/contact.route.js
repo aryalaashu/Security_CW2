@@ -4,7 +4,7 @@ const { verifyUser, verifyAuthorization } = require("../middlewares/auth.middler
 const router = require("express").Router()
 const contactContrller = new ContactContrller()
 
-router.post('/', verifyUser, contactContrller.addContact)
+router.post('/', contactContrller.addContact)
 
 router.get('/', verifyUser, verifyAuthorization, contactContrller.getContact)
 

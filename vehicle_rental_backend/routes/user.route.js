@@ -1,10 +1,10 @@
 const UserController = require("../modules/users/user.controller");
-const { verifyUser, verifyAuthorization } = require("../middlewares/auth.middlerware");
+const { verifyUser, verifyAuthorization,loginRateLimiter } = require("../middlewares/auth.middlerware");
 
 const router = require("express").Router()
 const userController = new UserController()
 
-router.post('/login', userController.login)
+router.post('/login',loginRateLimiter, userController.login)
 
 router.post('/register', userController.register)
 
