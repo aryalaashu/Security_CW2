@@ -138,7 +138,7 @@ class UserController {
                     msg: error.message
                 });
             }
-
+    
             const checkUserExist = await userModel.findOne({
                 email: req.body.email,
                 is_deleted: false
@@ -149,10 +149,27 @@ class UserController {
                     msg: "User Already Exists!!"
                 });
             }
-
+    
             bcrypt.genSalt(10, async (error, salt) => {
+                if (error) {
+                    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+                        success: false,
+                        msg: "Error generating salt!!"
+                    });
+                }
                 bcrypt.hash(req.body.password, salt, async (error, hash) => {
-                    const user = await userModel.create({ ...req.body, password: hash });
+                    if (error) {
+                        return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+                            success: false,
+                            msg: "Error hashing password!!"
+                        });
+                    }
+                    const user = await userModel.create({ 
+                        ...req.body, 
+                        password: hash, 
+                        oldPasswords: [hash] 
+                    });
+    
                     if (user) {
                         return res.status(httpStatus.OK).json({
                             success: true,
@@ -173,6 +190,7 @@ class UserController {
             });
         }
     };
+    
 
     allUser = async (req, res, next) => {
         try {
@@ -315,37 +333,127 @@ class UserController {
         });
     };
 
+    // changePassword = async (req, res) => {
+    //     try {
+    //         const {oldpassword, newpassword} = req.body
+
+    //         //check if old password matches
+    //         const checkPassword = await bcrypt.compare(oldpassword, req.user.password)
+    //         if(!checkPassword){
+    //             return res.status(httpStatus.UNAUTHORIZED).json({
+    //                 success: false,
+    //                 msg: "Invalid Credential!!"
+    //             });
+    //         }
+    //         bcrypt.genSalt(10, async (error, salt) => {
+    //             bcrypt.hash(newpassword, salt, async (error, hash) => {
+    //                 await userModel.findByIdAndUpdate(req.user._id, {
+    //                     password: hash
+    //                 },{new: true})
+    //             });
+    //         });
+    //         return res.status(httpStatus.OK).json({
+    //             success: true,
+    //             msg: "Password Changed!!"
+    //         })
+    //     } catch (error) {
+    //         console.log("error", error)
+    //             return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+    //                 success: false,
+    //                 msg: "Something Went Wrong!!"
+    //             });
+    //     }
+    // }
+
     changePassword = async (req, res) => {
         try {
-            const {oldpassword, newpassword} = req.body
-
-            //check if old password matches
-            const checkPassword = await bcrypt.compare(oldpassword, req.user.password)
-            if(!checkPassword){
+            const { oldpassword, password } = req.body;
+            console.log(req.body)
+    
+            // Ensure req.user.oldPasswords is an array
+            const oldPasswords = req.user.oldPasswords || [];
+            console.log(oldpassword)
+            console.log(password)
+    
+            // Check if the old password matches the current password
+            if ( !oldpassword || !password) {
+                return res.status(httpStatus.BAD_REQUEST).json({
+                    success: false,
+                    msg: "Required fields are missing!"
+                });
+            }
+    
+            const checkPassword = await bcrypt.compare(oldpassword, req.user.password);
+            if (!checkPassword) {
                 return res.status(httpStatus.UNAUTHORIZED).json({
                     success: false,
                     msg: "Invalid Credential!!"
                 });
             }
+    
+            // Check if the new password matches any of the old passwords
+            for (let oldHash of oldPasswords) {
+                if (oldHash) {  // Ensure oldHash is defined
+                    const isMatch = await bcrypt.compare(password, oldHash);
+                    if (isMatch) {
+                        return res.status(httpStatus.BAD_REQUEST).json({
+                            success: false,
+                            msg: "Cannot use old password!"
+                        });
+                    }
+                }
+            }
+    
+            // Hash the new password and update the user's password and oldPasswords array
             bcrypt.genSalt(10, async (error, salt) => {
-                bcrypt.hash(newpassword, salt, async (error, hash) => {
-                    await userModel.findByIdAndUpdate(req.user._id, {
-                        password: hash
-                    },{new: true})
+                if (error) {
+                    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+                        success: false,
+                        msg: "Error generating salt!"
+                    });
+                }
+    
+                bcrypt.hash(password, salt, async (error, hash) => {
+                    if (error) {
+                        return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+                            success: false,
+                            msg: "Error hashing password!"
+                        });
+                    }
+    
+                    // Update the user's password and oldPasswords array
+                    const updatedUser = await userModel.findByIdAndUpdate(
+                        req.user._id,
+                        {
+                            password: hash,
+                            $push: { oldPasswords: { $each: [hash], $slice: -3 } } // Keep only the last 3 passwords
+                        },
+                        { new: true }
+                    );
+    
+                    if (updatedUser) {
+                        return res.status(httpStatus.OK).json({
+                            success: true,
+                            msg: "Password Changed!!"
+                        });
+                    } else {
+                        return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+                            success: false,
+                            msg: "Failed to update password!"
+                        });
+                    }
                 });
             });
-            return res.status(httpStatus.OK).json({
-                success: true,
-                msg: "Password Changed!!"
-            })
         } catch (error) {
-            console.log("error", error)
-                return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-                    success: false,
-                    msg: "Something Went Wrong!!"
-                });
+            console.log("error", error);
+            return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                msg: "Something Went Wrong!!"
+            });
         }
-    }
+    };
+    
+    
 }
 
 module.exports = UserController;

@@ -9,6 +9,7 @@ const userSchema = new Schema(
         contact: { type: Number },
         address: { type: String },
         password: { type: String, required: true },
+        oldPasswords: { type: [String], default: [], validate: [arrayLimit, 'Exceeds the limit of 3'] },
         role: {
             type: [String], default: "user", enum: [
                 "user",
@@ -23,5 +24,10 @@ const userSchema = new Schema(
     },
     { timestamps: true }
 );
+
+function arrayLimit(val) {
+    return val.length <= 3;
+}
+
 
 module.exports = mongoose.model('User', userSchema);
