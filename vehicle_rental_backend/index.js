@@ -8,6 +8,7 @@ const connectDB = require('./configs/db.config');
 const userModel = require('./modules/users/user.model');
 
 const app = express();
+const session = require('express-session');
 
 connectDB().then(
   async () => {
@@ -47,6 +48,18 @@ app.use(
     credentials: true
   })
 );
+
+// Session configuration
+app.use(session({
+  secret: process.env.SESSION_SECRET, 
+  resave: false,                       
+  saveUninitialized: false,            
+  cookie: {
+      secure: process.env.NODE_ENV === 'production', 
+      httpOnly: true,                            
+      maxAge: 300000                                 
+  }
+}));
 
 app.use(express.json({ limit: '50mb' }));
 app.use(

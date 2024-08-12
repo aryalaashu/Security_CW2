@@ -100,6 +100,9 @@ class UserController {
                     msg: "Email or Password Incorrect!!"
                 });
             }
+            // Store user data in the session
+            req.session.userId = user._id;
+            req.session.role = user.role;
     
             // Reset login attempts on successful login
             await userModel.updateOne(
