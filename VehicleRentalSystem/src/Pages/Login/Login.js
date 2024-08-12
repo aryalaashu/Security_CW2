@@ -14,14 +14,14 @@ function Login() {
 
   // Function to handle form submission
   const handleFormSubmit = async (values, actions) => {
-    if (!recaptchaToken) {
-      toast.error('Please complete the reCAPTCHA');
-      return;
-    }
+    // if (!recaptchaToken) {
+    //   toast.error('Please complete the reCAPTCHA');
+    //   return;
+    // }
 
     try {
       // Make an Axios POST request
-      const response = await axios.post('user/login', { ...values, recaptchaToken });
+      const response = await axios.post('user/login', { ...values });
 
       if (response.data.success) {
         localStorage.setItem('_hw_userDetails', JSON.stringify(response.data.data));
