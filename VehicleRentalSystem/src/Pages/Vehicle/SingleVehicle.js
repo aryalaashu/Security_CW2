@@ -11,6 +11,7 @@ import { loadStripe } from '@stripe/stripe-js'
 import Modal from 'react-modal'
 import dayjs from 'dayjs'
 import EditBookingModal from './EditBookingModal'
+import ReCAPTCHA from 'react-google-recaptcha';
 
 function SingleVehicle() {
     const [isLoading, setIsLoading] = useState(false)
@@ -35,6 +36,8 @@ function SingleVehicle() {
     const [selectedVehicleData, setSelectedVehicleData] = useState()
 
     const [packageList, setPackageList] = useState()
+    const [recaptcha, setRecaptcha] = useState(null);
+
 
     const getMyBookings = async () => {
         try {
@@ -123,6 +126,8 @@ function SingleVehicle() {
             } else {
                 console.log("Invalid dates");
             }
+            const token = await recaptcha.executeAsync();
+
             const body = {
                 vehicle: vehicleData?._id,
                 price: vehicleData?.price * totalDays,
@@ -130,6 +135,7 @@ function SingleVehicle() {
                 drop_date: value?.drop_date,
                 address: value?.address,
                 contact: value?.contact,
+                recaptchaToken: token
             }
 
             const response = await axios.post(`${process.env.REACT_APP_BASE_URI}booking/create-intent`, body)
@@ -277,6 +283,14 @@ function SingleVehicle() {
                                             Note: If changes in pick up and drop dates needs to be done, you should contact the admin before 24 hrs.
                                         </label>
                                     </div>
+                                </div>
+                                                
+                                <div className="mt-6  w-full">
+                                    <ReCAPTCHA
+                                    sitekey="6LfrjiUqAAAAAJbLINUKVlWJelSmkleQUfaDF2A2"  // Replace with your reCAPTCHA v3 Site Key
+                                    size="invisible"
+                                    ref={(el) => setRecaptcha(el)}
+                                    />
                                 </div>
                                 <button className='btn-primary w-full' type='submit' disabled={!isAgree}>
                                     Submit
