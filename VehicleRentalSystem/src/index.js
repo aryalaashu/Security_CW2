@@ -4,14 +4,19 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { BrowserRouter } from "react-router-dom";
-
+import { GoogleReCaptchaProvider } from 'react-google-recaptcha-v3';
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  <React.StrictMode>
+  // <GoogleReCaptchaProvider
+  //   reCaptchaKey="6LfrjiUqAAAAAJbLINUKVlWJelSmkleQUfaDF2A2"
+  //   >
+
+    <React.StrictMode>
     <BrowserRouter>
       <App />
     </BrowserRouter >
   </React.StrictMode>
+    // </GoogleReCaptchaProvider>
 );
 
 // If you want to start measuring performance in your app, pass a function

@@ -10,18 +10,23 @@ import ReCAPTCHA from 'react-google-recaptcha';
 function Login() {
   const navigate = useNavigate();
   const { isAuthenticated, setIsAuthenticated, setUserDetails } = useContext(AuthContext);
-  const [recaptchaToken, setRecaptchaToken] = useState('');
+  const [recaptcha, setRecaptcha] = useState(null);
 
   // Function to handle form submission
   const handleFormSubmit = async (values, actions) => {
-    // if (!recaptchaToken) {
-    //   toast.error('Please complete the reCAPTCHA');
-    //   return;
-    // }
+    if (!recaptcha) {
+      toast.error('Please complete the reCAPTCHA');
+      return;
+    }
 
     try {
+      // Execute reCAPTCHA to get the token
+      const token = await recaptcha.executeAsync();
       // Make an Axios POST request
-      const response = await axios.post('user/login', { ...values });
+      const response = await axios.post('user/login', {
+        ...values,
+        recaptchaToken: token // Include the reCAPTCHA token in the request
+      });
 
       if (response.data.success) {
         localStorage.setItem('_hw_userDetails', JSON.stringify(response.data.data));
@@ -47,10 +52,6 @@ function Login() {
     }
   }, [isAuthenticated, navigate]);
 
-  const handleRecaptchaChange = (token) => {
-    setRecaptchaToken(token);
-  };
-
   return (
     <div className="grid min-h-screen w-full place-items-center px-6 py-12 lg:px-8">
       <div className="max-w-3xl w-full ">
@@ -73,7 +74,7 @@ function Login() {
                 password: '',
               }}
               onSubmit={async (values, actions) => {
-                handleFormSubmit(values, actions);
+                await handleFormSubmit(values, actions);
               }}
             >
               {(props) => (
@@ -117,8 +118,9 @@ function Login() {
 
                   <div className="mt-6  w-full">
                     <ReCAPTCHA
-                      sitekey="your_site_key_here"
-                      onChange={handleRecaptchaChange}
+                      sitekey="6LfrjiUqAAAAAJbLINUKVlWJelSmkleQUfaDF2A2"  // Replace with your reCAPTCHA v3 Site Key
+                      size="invisible"
+                      ref={(el) => setRecaptcha(el)}
                     />
                   </div>
 
