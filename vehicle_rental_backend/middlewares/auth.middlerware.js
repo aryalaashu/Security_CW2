@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const httpStatus = require('http-status');
 const userModel = require('../modules/users/user.model');
+const axios = require('axios');
 
 const decodeToken = (authorization) => {
   try {
@@ -61,4 +62,45 @@ const loginRateLimiter = rateLimit({
     },
     headers: true, 
 });
-module.exports = { verifyUser, verifyAuthorization,loginRateLimiter };
+
+
+const verifyRecaptcha = async (req, res, next) => {
+  console.log(req.body)
+  const recaptchaResponse = req.body['recaptchaToken']; 
+
+
+  if (!recaptchaResponse) {
+    return res.status(httpStatus.BAD_REQUEST).json({
+      success: false,
+      message: 'reCAPTCHA response is required'
+    });
+  }
+
+  try {
+    const secretKey = process.env.RECAPTCHA_SECRET_KEY; 
+    const response = await axios.post(`https://www.google.com/recaptcha/api/siteverify`, null, {
+      params: {
+        secret: secretKey,
+        response: recaptchaResponse
+      }
+    });
+
+    const data = response.data;
+    console.log(data)
+    if (data.success) {
+      next(); 
+    } else {
+      res.status(httpStatus.UNAUTHORIZED).json({
+        success: false,
+        message: 'reCAPTCHA verification failed'
+      });
+    }
+  } catch (error) {
+    console.error('Error verifying reCAPTCHA:', error);
+    res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: 'Error verifying reCAPTCHA'
+    });
+  }
+};
+module.exports = { verifyUser, verifyAuthorization,loginRateLimiter,verifyRecaptcha };

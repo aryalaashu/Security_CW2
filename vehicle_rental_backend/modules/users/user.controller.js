@@ -42,14 +42,15 @@ class UserController {
     // };
 
     login = async (req, res, next) => {
+        console.log(req.body)
         try {
             const { error } = this.loginValidationSchema.validate(req.body);
-            if (error) {
-                return res.status(httpStatus.BAD_REQUEST).json({
-                    success: false,
-                    msg: error.message
-                });
-            }
+            // if (error) {
+            //     return res.status(httpStatus.BAD_REQUEST).json({
+            //         success: false,
+            //         msg: error.message
+            //     });
+            // }
     
             const user = await userModel.findOne({
                 email: req.body.email,
