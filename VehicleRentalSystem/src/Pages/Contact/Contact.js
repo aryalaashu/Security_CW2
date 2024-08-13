@@ -5,15 +5,23 @@ import toast from 'react-hot-toast'
 import { CgMail } from 'react-icons/cg'
 import { FaLocationDot, FaLocationPin } from 'react-icons/fa6'
 import { HiPhone } from 'react-icons/hi'
+import ReCAPTCHA from 'react-google-recaptcha';
 
 function Contact() {
 
     const [expandedIndex, setExpandedIndex] = useState(null)
+    const [recaptcha, setRecaptcha] = useState(null);
+
 
     const handleFormSubmit = async (values, actions) => {
+        if (!recaptcha) {
+            toast.error('Please complete the reCAPTCHA');
+            return;
+          }
+      
         try {
-
-            let result = await axios.post('/contact', values)
+            const token = await recaptcha.executeAsync();
+            let result = await axios.post('/contact', {...values,recaptchaToken: token})
 
             if (result.data.success) {
                 toast.success('Message Submitted Successfully')
@@ -133,6 +141,14 @@ function Contact() {
                                                 />
                                             </div>
                                         </div>
+
+                  <div className="mt-6  w-full">
+                    <ReCAPTCHA
+                      sitekey="6LfrjiUqAAAAAJbLINUKVlWJelSmkleQUfaDF2A2"  // Replace with your reCAPTCHA v3 Site Key
+                      size="invisible"
+                      ref={(el) => setRecaptcha(el)}
+                    />
+                  </div>
 
                                     </div>
                                     <div className="mt-10">

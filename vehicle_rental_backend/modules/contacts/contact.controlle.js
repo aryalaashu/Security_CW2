@@ -11,6 +11,7 @@ class ContactController {
         email: Joi.string().required(), 
         mobile_no: Joi.string().required(), 
         message: Joi.string().required(), 
+        recaptchaToken: Joi.string().required(),
         
     })
 
