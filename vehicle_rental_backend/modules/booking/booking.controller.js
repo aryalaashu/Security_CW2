@@ -13,6 +13,7 @@ const bookingJoiSchema = Joi.object({
   drop_date: Joi.string().required(),
   address: Joi.string().required(),
   contact: Joi.string().required(),
+  recaptchaToken: Joi.string().required(),
 });
 
 //payment
