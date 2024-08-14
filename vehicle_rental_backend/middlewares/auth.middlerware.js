@@ -20,6 +20,7 @@ const getUser = async (userId) => {
   }
 };
 
+
 const handleUnauthorizedAccess = (res) => {
   return res
     .status(httpStatus.UNAUTHORIZED)
